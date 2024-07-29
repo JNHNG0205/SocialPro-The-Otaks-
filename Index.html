@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Automation App</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5a623;
+            --background-color: #f0f4f8;
+            --card-color: #ffffff;
+            --text-color: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .tab-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
+            font-size: 1em;
+            text-transform: uppercase;
+        }
+        .tab-button:hover {
+            background-color: var(--secondary-color);
+        }
+        .tab {
+            display: none;
+            background-color: var(--card-color);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .tab h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        button[type="submit"], button.action-button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
+            font-size: 1em;
+            text-transform: uppercase;
+        }
+        button[type="submit"]:hover, button.action-button:hover {
+            background-color: var(--primary-color);
+        }
+        #scheduleResult, #generateResult, #analyticsResult, #logResult {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        #analyticsChart {
+            margin-top: 20px;
+        }
+        .file-input-wrapper {
+            margin-bottom: 20px;
+        }
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+        .file-input-wrapper label {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .file-input-wrapper label:hover {
+            background-color: var(--secondary-color);
+        }
+        #fileNameDisplay {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Social Media Automation App</h1>
+        
+        <div class="tab-container">
+            <button class="tab-button" onclick="openTab('schedule')">Schedule Posts</button>
+            <button class="tab-button" onclick="openTab('generate')">Generate AI Content</button>
+            <button class="tab-button" onclick="openTab('analytics')">View Analytics</button>
+            <button class="tab-button" onclick="openTab('log')">View Logs</button>
+        </div>
+
+        <div id="schedule" class="tab">
+            <h2>Schedule Posts</h2>
+            <form id="postForm">
+                <select id="platform" required>
+                    <option value="">Select Platform</option>
+                    <option value="Twitter">Twitter</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                </select>
+                <textarea id="content" rows="4" placeholder="Enter your post content here" required></textarea>
+                <div class="file-input-wrapper">
+                    <label for="mediaAttachment">Attach Media</label>
+                    <input type="file" id="mediaAttachment" accept="image/*,video/*">
+                    <span id="fileNameDisplay"></span>
+                </div>
+                <input type="datetime-local" id="datetime" required>
+                <button type="submit">Schedule Post</button>
+            </form>
+            <div id="scheduleResult"></div>
+        </div>
+
+        <div id="generate" class="tab">
+            <h2>Generate AI Content</h2>
+            <select id="aiPlatform">
+                <option value="">Select Platform</option>
+                <option value="Twitter">Twitter</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Instagram">Instagram</option>
+                <option value="LinkedIn">LinkedIn</option>
+            </select>
+            <textarea id="prompt" rows="4" placeholder="Enter your content prompt here"></textarea>
+            <button onclick="generateContent()" class="action-button">Generate Content</button>
+            <div id="generateResult"></div>
+        </div>
+
+        <div id="analytics" class="tab">
+            <h2>Analytics</h2>
+            <button onclick="fetchAnalyticsData()" class="action-button">Refresh Analytics</button>
+            <div id="analyticsResult"></div>
+            <canvas id="analyticsChart"></canvas>
+        </div>
+
+        <div id="log" class="tab">
+            <h2>Activity Log</h2>
+            <button onclick="fetchLogData()" class="action-button">Refresh Log</button>
+            <div id="logResult"></div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(tabName) {
+            var tabs = document.getElementsByClassName('tab');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].style.display = 'none';
+            }
+            document.getElementById(tabName).style.display = 'block';
+        }
+
+        document.getElementById('postForm').onsubmit = function(e) {
+            e.preventDefault();
+            var formData = new FormData();
+            formData.append('platform', this.platform.value);
+            formData.append('content', this.content.value);
+            formData.append('datetime', this.datetime.value);
+            
+            var mediaFile = document.getElementById('mediaAttachment').files[0];
+            if (mediaFile) {
+                formData.append('mediaAttachment', mediaFile);
+            }
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    document.getElementById('scheduleResult').innerText = result;
+                })
+                .schedulePosts(formData);
+        };
+
+        document.getElementById('mediaAttachment').addEventListener('change', function(e) {
+            var fileName = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
+            document.getElementById('fileNameDisplay').textContent = fileName;
+        });
+
+        function generateContent() {
+            var platform = document.getElementById('aiPlatform').value;
+            var prompt = document.getElementById('prompt').value;
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    document.getElementById('generateResult').innerText = result;
+                })
+                .generateAIContent(prompt, platform);
+        }
+
+        let analyticsChart;
+
+        function fetchAnalyticsData() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    updateAnalyticsDisplay(result);
+                    updateAnalyticsChart(result);
+                })
+                .fetchAnalytics();
+        }
+
+        function updateAnalyticsDisplay(result) {
+            var output = '';
+            for (var platform in result) {
+                output += platform + ': ' + 
+                          'Followers: ' + result[platform].followers + ', ' +
+                          'Engagements: ' + result[platform].engagements + '\n';
+            }
+            document.getElementById('analyticsResult').innerText = output;
+        }
+
+        function updateAnalyticsChart(data) {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            const platforms = Object.keys(data);
+            const followers = platforms.map(platform => data[platform].followers);
+            const engagements = platforms.map(platform => data[platform].engagements);
+
+            if (analyticsChart) {
+                analyticsChart.destroy();
+            }
+
+            analyticsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: platforms,
+                    datasets: [
+                        {
+                            label: 'Followers',
+                            data: followers,
+                            backgroundColor: 'rgba(74, 144, 226, 0.7)',
+                            borderColor: 'rgba(74, 144, 226, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Engagements',
+                            data: engagements,
+                            backgroundColor: 'rgba(245, 166, 35, 0.7)',
+                            borderColor: 'rgba(245, 166, 35, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Social Media Analytics'
+                        }
+                    }
+                }
+            });
+        }
+
+        function fetchLogData() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    updateLogDisplay(result);
+                })
+                .fetchLogEntries();
+        }
+
+        function updateLogDisplay(result) {
+            if (!result || result.length === 0) {
+                document.getElementById('logResult').innerText = 'No log entries found.';
+                return;
+            }
+            var output = '';
+            result.forEach(function(entry) {
+                output += `Timestamp: ${entry[0]}, Action: ${entry[1]}, Details: ${entry[2]}\n`;
+            });
+            document.getElementById('logResult').innerText = output;
+        }
+
+        // Open the Schedule tab by default
+        openTab('schedule');
+    </script>
+</body>
+</html>

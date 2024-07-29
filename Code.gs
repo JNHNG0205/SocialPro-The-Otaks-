@@ -110,20 +110,102 @@ function createPost(caption, mediaId, publishTime) {
   return responseData.id;
 }
 
+// ... (previous code remains unchanged) ...
+
 function getMediaUrl(blob) {
-  // This function should return a publicly accessible URL for the media
-  // You might need to upload the blob to Google Drive and create a public link
-  // Or use another file hosting service
-  // For this example, we'll assume you have a function that does this
-  return uploadToFileHost(blob);
+  return uploadToGoogleDrive(blob);
 }
 
-function uploadToFileHost(blob) {
-  // Implement your file hosting logic here
-  // This could involve uploading to Google Drive, or another file hosting service
-  // Return the public URL of the uploaded file
+function uploadToGoogleDrive(blob) {
+  try {
+    // Create a folder in Google Drive to store the media files
+    const folderName = 'Instagram Media Files';
+    let folder = DriveApp.getFoldersByName(folderName).next();
+    if (!folder) {
+      folder = DriveApp.createFolder(folderName);
+    }
+
+    // Create a unique file name
+    const fileName = `instagram_media_${new Date().getTime()}.${getFileExtension(blob.getName())}`;
+
+    // Create the file in Google Drive
+    const file = folder.createFile(blob);
+    file.setName(fileName);
+
+    // Set the file to be publicly accessible
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // Get the file's URL
+    const url = file.getDownloadUrl();
+
+    return url;
+  } catch (error) {
+    Logger.log('Error in uploadToGoogleDrive: ' + error.toString());
+    throw new Error('Failed to upload file to Google Drive: ' + error.toString());
+  }
 }
 
+function getFileExtension(filename) {
+  return filename.split('.').pop();
+}
+
+// Update the schedulePosts function to handle file upload
+function schedulePosts(formData) {
+  try {
+    const platform = formData.platform;
+    const content = formData.content;
+    const datetime = formData.datetime;
+    const mediaAttachment = formData.mediaAttachment;
+
+    if (platform !== 'Instagram') {
+      return 'This function only supports Instagram posting.';
+    }
+
+    // Upload media to Google Drive and get the public URL
+    const mediaUrl = getMediaUrl(mediaAttachment);
+
+    // Upload media to Instagram
+    const mediaId = uploadMedia(mediaUrl);
+
+    // Schedule the post
+    const postId = createPost(content, mediaId, datetime);
+
+    // Log the activity
+    logActivity('Schedule Post', `Platform: ${platform}, Content: ${content}, Datetime: ${datetime}, Media URL: ${mediaUrl}`);
+
+    return `Post scheduled successfully. Post ID: ${postId}`;
+  } catch (error) {
+    Logger.log('Error in schedulePosts: ' + error.toString());
+    return 'Error scheduling post: ' + error.toString();
+  }
+}
+
+// Update the uploadMedia function to use URL instead of Blob
+function uploadMedia(mediaUrl) {
+  const url = `https://graph.facebook.com/v12.0/${INSTAGRAM_ACCOUNT_ID}/media`;
+  
+  const formData = {
+    'access_token': ACCESS_TOKEN,
+    'image_url': mediaUrl,
+  };
+
+  const options = {
+    'method': 'post',
+    'payload': formData,
+    'muteHttpExceptions': true
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const responseData = JSON.parse(response.getContentText());
+
+  if (responseData.error) {
+    throw new Error(`Error uploading media: ${responseData.error.message}`);
+  }
+
+  return responseData.id;
+}
+
+// ... (rest of the previous code remains unchanged) ...
 
 
 function generateAIContent(prompt, platform) {

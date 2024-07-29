@@ -94,6 +94,12 @@
             border-radius: 5px;
             font-weight: bold;
         }
+        #generateResult {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
         #analyticsChart {
             margin-top: 20px;
         }
@@ -216,9 +222,16 @@
         function generateContent() {
             var platform = document.getElementById('aiPlatform').value;
             var prompt = document.getElementById('prompt').value;
+            
+            // Show loading message
+            document.getElementById('generateResult').innerText = 'Generating content...';
+            
             google.script.run
                 .withSuccessHandler(function(result) {
                     document.getElementById('generateResult').innerText = result;
+                })
+                .withFailureHandler(function(error) {
+                    document.getElementById('generateResult').innerText = 'Error: ' + error.message;
                 })
                 .generateAIContent(prompt, platform);
         }

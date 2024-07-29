@@ -110,7 +110,6 @@ function createPost(caption, mediaId, publishTime) {
   return responseData.id;
 }
 
-// ... (previous code remains unchanged) ...
 
 function getMediaUrl(blob) {
   return uploadToGoogleDrive(blob);
@@ -204,8 +203,6 @@ function uploadMedia(mediaUrl) {
 
   return responseData.id;
 }
-
-// ... (rest of the previous code remains unchanged) ...
 
 
 function generateAIContent(prompt, platform) {

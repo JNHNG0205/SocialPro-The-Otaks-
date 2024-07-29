@@ -43,14 +43,17 @@ function schedulePosts(formData) {
       return 'This function only supports Instagram posting.';
     }
 
+    // Upload media to Google Drive and get the public URL
+    const mediaUrl = getMediaUrl(mediaAttachment);
+
     // Upload media to Instagram
-    const mediaId = uploadMedia(mediaAttachment);
+    const mediaId = uploadMedia(mediaUrl);
 
     // Schedule the post
     const postId = createPost(content, mediaId, datetime);
 
     // Log the activity
-    logActivity('Schedule Post', `Platform: ${platform}, Content: ${content}, Datetime: ${datetime}, Media: ${mediaAttachment.getName()}`);
+    logActivity('Schedule Post', `Platform: ${platform}, Content: ${content}, Datetime: ${datetime}, Media URL: ${mediaUrl}`);
 
     return `Post scheduled successfully. Post ID: ${postId}`;
   } catch (error) {
@@ -59,12 +62,12 @@ function schedulePosts(formData) {
   }
 }
 
-function uploadMedia(mediaBlob) {
+function uploadMedia(mediaUrl) {
   const url = `https://graph.facebook.com/v12.0/${INSTAGRAM_ACCOUNT_ID}/media`;
   
   const formData = {
     'access_token': ACCESS_TOKEN,
-    'image_url': getMediaUrl(mediaBlob),
+    'image_url': mediaUrl,
   };
 
   const options = {
@@ -148,61 +151,6 @@ function getFileExtension(filename) {
   return filename.split('.').pop();
 }
 
-// Update the schedulePosts function to handle file upload
-function schedulePosts(formData) {
-  try {
-    const platform = formData.platform;
-    const content = formData.content;
-    const datetime = formData.datetime;
-    const mediaAttachment = formData.mediaAttachment;
-
-    if (platform !== 'Instagram') {
-      return 'This function only supports Instagram posting.';
-    }
-
-    // Upload media to Google Drive and get the public URL
-    const mediaUrl = getMediaUrl(mediaAttachment);
-
-    // Upload media to Instagram
-    const mediaId = uploadMedia(mediaUrl);
-
-    // Schedule the post
-    const postId = createPost(content, mediaId, datetime);
-
-    // Log the activity
-    logActivity('Schedule Post', `Platform: ${platform}, Content: ${content}, Datetime: ${datetime}, Media URL: ${mediaUrl}`);
-
-    return `Post scheduled successfully. Post ID: ${postId}`;
-  } catch (error) {
-    Logger.log('Error in schedulePosts: ' + error.toString());
-    return 'Error scheduling post: ' + error.toString();
-  }
-}
-
-// Update the uploadMedia function to use URL instead of Blob
-function uploadMedia(mediaUrl) {
-  const url = `https://graph.facebook.com/v12.0/${INSTAGRAM_ACCOUNT_ID}/media`;
-  
-  const formData = {
-    'access_token': ACCESS_TOKEN,
-    'image_url': mediaUrl,
-  };
-
-  const options = {
-    'method': 'post',
-    'payload': formData,
-    'muteHttpExceptions': true
-  };
-
-  const response = UrlFetchApp.fetch(url, options);
-  const responseData = JSON.parse(response.getContentText());
-
-  if (responseData.error) {
-    throw new Error(`Error uploading media: ${responseData.error.message}`);
-  }
-
-  return responseData.id;
-}
 
 
 function generateAIContent(prompt, platform) {
